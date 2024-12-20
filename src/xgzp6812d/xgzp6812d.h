@@ -1,11 +1,11 @@
 /*
- *  tk2700.h
+ *  xgzp6812d.h
  *
- *  Created on: Dec 18, 2023
+ *  Created on: Dec 18, 2024
  */
 
-#ifndef _TK2700_H_
-#define _TK2700_H_
+#ifndef _XGZP6812D_H_
+#define _XGZP6812D_H_
 
 /******************************************************************************/
 
@@ -18,7 +18,6 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
-#include <zephyr/drivers/sensor.h>
 
 /******************************************************************************/
 /*                     EXPORTED TYPES and DEFINITIONS                         */
@@ -44,18 +43,18 @@
 
 /*!
  * @brief  Start measurement and read the results
- * @param  [out] Presure (in KPA) and Temperature (in 0.1 C)
+ * @param  [out] Presure (in KPA) and Temperature (in C)
  * @retval 0 if success or error
  */
-int tk2700_read_results(int16_t *pressure, int16_t *temperature);
+int xgzp6812d_get_cal(float *pressure_kpa, float *temperature); 
 
 /*!
- * @brief  Initialize TK2700
+ * @brief  Initialize XGZP6812D
  * @param  None
  * @retval 0 if success or error
  */
-int tk2700_init(void);
+int xgzp6812d_init(void);
 
 /******************************************************************************/
 
-#endif /* _TK2700_H_ */
+#endif /* _XGZP6812D_H_ */

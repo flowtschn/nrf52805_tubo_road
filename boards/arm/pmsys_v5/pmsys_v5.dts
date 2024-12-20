@@ -1,0 +1,121 @@
+// Copyright (c) 2024 Nordic Semiconductor ASA
+// SPDX-License-Identifier: Apache-2.0
+
+/dts-v1/;
+#include <nordic/nrf52805_caaa.dtsi>
+
+/ {
+	zephyr,user {
+		io-channels = <&adc 0>;
+	};
+};
+
+/ {
+	model = "pmsys v3";
+	compatible = "pm-sys,pmsys-v5";
+ 
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	gpios {
+		compatible = "gpio-keys";
+		accelint1: accel_int1 {
+			gpios = <&gpio0 5 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+			label = "Accel sensor INT1 pin";
+		};
+		accelint2: accel_int2 {
+			gpios = <&gpio0 4 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+			label = "Accel sensor INT2 pin";
+		};
+	};
+
+	aliases {
+		accelint = &accelint1;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 0xc000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0xc000 0xa000>;
+		};
+		slot1_partition: partition@16000 {
+			label = "image-1";
+			reg = <0x16000 0xa000>;
+		};
+		scratch_partition: partition@20000 {
+			label = "image-scratch";
+			reg = <0x20000 0xa000>;
+		};
+		storage_partition: partition@2a000 {
+			label = "storage";
+			reg = <0x2a000 0x6000>;
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&pinctrl {
+
+    i2c_alt_default: i2c_alt_default {
+        group1 {
+            psels = <NRF_PSEL(TWIM_SDA, 0, 12)>,
+                	<NRF_PSEL(TWIM_SCL, 0, 16)>;
+        };
+    };
+
+    i2c_alt_sleep: i2c_alt_sleep {
+        group1 {
+            psels = <NRF_PSEL(TWIM_SDA, 0, 12)>,
+                	<NRF_PSEL(TWIM_SCL, 0, 16)>;
+			low-power-enable;
+        };
+    };
+
+};
+
+i2c0_inst: &i2c0 {
+    compatible = "nordic,nrf-twim";
+    status = "okay";
+    pinctrl-0 = <&i2c_alt_default>;
+	pinctrl-1 = <&i2c_alt_sleep>;
+	pinctrl-names = "default", "sleep";
+    clock-frequency = < I2C_BITRATE_FAST >;
+};
+
+&adc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	vbat-adc@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 10)>;
+		zephyr,input-positive = <NRF_SAADC_VDD>;
+		zephyr,oversampling = <4>;
+		zephyr,resolution = <12>;
+	};
+};
+
+

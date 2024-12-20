@@ -24,7 +24,7 @@
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/gpio.h>
 #include <helpers/nrfx_reset_reason.h>
-#include "tk2700/tk2700.h"
+#include "xgzp6812d/xgzp6812d.h"
 #include "lis2dh12tr/lis2dh12tr.h"
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
@@ -54,7 +54,7 @@ static int ADV_INTERVAL_S=30;    /* Advertising upto ADV_INTERVAL_S seconds if n
 #define PRES_INDEX              4
 #define TEMP_INDEX              6
 
-static int16_t pressure = 0, temperature = 0;
+static float pressure = 0.0, temperature = 0.0;
 static double pressure_present = 0;
 static double pressure_p2 = 0;
 static volatile int sleep_counter = 0;
@@ -148,21 +148,17 @@ static void bt_ready(int err) {
 
 void advertising_start()
 {
-     if (pressure_present>2)
-     { 
-        
-    
-    
-    LOG_INF("Start advertising!!!");
-    int err = bt_le_adv_start(ADV_PARAM, adv_data, ARRAY_SIZE(adv_data), NULL, 0);
-    if (err) {
-        LOG_ERR("Advertising failed to start (err %d)", err);
-        sys_reboot(SYS_REBOOT_WARM);
-        return ;
-    }
-    flagstart=2;
+    if (pressure_present>2)
+    { 
+        LOG_INF("Start advertising!!!");
+        int err = bt_le_adv_start(ADV_PARAM, adv_data, ARRAY_SIZE(adv_data), NULL, 0);
+        if (err) {
+            LOG_ERR("Advertising failed to start (err %d)", err);
+            sys_reboot(SYS_REBOOT_WARM);
+            return ;
+        }
+        flagstart=2;
     } 
-    
 } 
 
 
@@ -173,8 +169,6 @@ int main(void) {
     int err;
     LOG_INF("Power up! Firmware version %s", "1.0.0");
     k_msleep(100);    /* 1 seconds */
-
-   
 
     /* Need to initialize lis2dh12tr to pull up INT1 pin */
     lis2dh12tr_init();
@@ -196,13 +190,11 @@ int main(void) {
     }
 
     /* the sensors */
-    tk2700_init();
+    xgzp6812d_init();
 
     /* Initialize the adv_update timer */
     k_timer_init(&m_adv_update_timer_id, adv_update_timer_timeout, NULL);
 
-
-   
     /* Start the adv_update timer, periodic with 1000 ms as an interval */
     k_timer_start(&m_adv_update_timer_id, K_MSEC(1000), K_MSEC(1000));
    
@@ -224,15 +216,15 @@ int main(void) {
         {
            
             
-                if (tk2700_read_results(&pressure, &temperature) == 0) 
+                if (xgzp6812d_get_cal(&pressure, &temperature) == 0) 
                 {
                     
 
                         /*Meassuring the parameters*/
-                        service_data[PRES_INDEX] = pressure / 10;                  /* kPa to 0.1bar */
+                        service_data[PRES_INDEX] = (uint8_t) (pressure / 10);                  /* kPa to 0.1bar */
                         service_data[TEMP_INDEX] = (int8_t) (temperature / 10);    /* C to 0.1C */
                         pressure_present=pressure/10;
-                        LOG_INF("Temperature %d, pressure %d", temperature, pressure_present);
+                        LOG_INF("Temperature %f c, pressure %f kpa", temperature, pressure_present);
 
                          if (pressure_present>2)
                     { 
