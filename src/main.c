@@ -24,6 +24,7 @@
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/gpio.h>
 #include <helpers/nrfx_reset_reason.h>
+#include <zephyr/drivers/i2c.h>
 #include "xgzp6812d/xgzp6812d.h"
 #include "lis2dh12tr/lis2dh12tr.h"
 
@@ -91,6 +92,27 @@ void adv_update_timer_timeout(struct k_timer *timer_id)
     ridemode_counter++;
     LOG_INF("ridemode_counter %d", ridemode_counter);
 
+}
+
+static const struct device * sensors_i2c_dev = DEVICE_DT_GET(DT_NODELABEL(i2c0_inst));
+
+int i2c_scanner(void) {
+
+    int err = 0;
+	uint8_t dst = 0;
+	uint8_t i2c_dev_cnt = 0;
+
+	for (uint8_t x = 0; x <= 0x7f; x++) {
+        /* Send the address to read from */
+        err = i2c_read(sensors_i2c_dev, &dst, 1, x);
+            /* I2C device found on current address */
+        if (err == 0) {
+            LOG_INF("I2c device found @ addr 0x%02x ",x);
+            i2c_dev_cnt++;
+        }
+	}
+
+	LOG_INF("Scan done! found %d i2c devices", i2c_dev_cnt);
 }
 
 /******************************************************************************/
@@ -169,6 +191,9 @@ int main(void) {
     int err;
     LOG_INF("Power up! Firmware version %s", "1.0.0");
     k_msleep(100);    /* 1 seconds */
+
+    // Scanning the i2c bus for sensors addresses
+    i2c_scanner();
 
     /* Need to initialize lis2dh12tr to pull up INT1 pin */
     lis2dh12tr_init();
